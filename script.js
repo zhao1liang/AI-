@@ -427,6 +427,16 @@
     return new URL(path, document.baseURI || window.location.href).href;
   }
 
+  function getQrSources(tab) {
+    const pay = getPaymentConfig();
+    const embedded = typeof PAYMENT_QR !== 'undefined' ? PAYMENT_QR : null;
+
+    if (tab === 'wechat') {
+      return [embedded?.WECHAT, pay.WECHAT_QR, pay.WECHAT_QR_FALLBACK].filter(Boolean);
+    }
+    return [embedded?.ALIPAY, pay.ALIPAY_QR, pay.ALIPAY_QR_FALLBACK].filter(Boolean);
+  }
+
   function setPayTab(tab) {
     if (tab !== 'wechat' && tab !== 'alipay') return;
     currentPayTab = tab;
@@ -435,36 +445,33 @@
       t.classList.toggle('active', t.dataset.payTab === tab);
     });
 
-    const pay = getPaymentConfig();
-    const isWechat = tab === 'wechat';
-    const src = isWechat ? pay.WECHAT_QR : pay.ALIPAY_QR;
-    const fallback = isWechat ? pay.WECHAT_QR_FALLBACK : pay.ALIPAY_QR_FALLBACK;
-    const version = pay.QR_VERSION || '1';
-    const label = isWechat ? 'WeChat Pay' : 'Alipay';
+    const label = tab === 'wechat' ? 'WeChat Pay' : 'Alipay';
+    const version = getPaymentConfig().QR_VERSION || '1';
 
     if (els.paymentQrLabel) els.paymentQrLabel.textContent = label;
     if (els.paymentModalQrLabel) els.paymentModalQrLabel.textContent = label;
 
+    const sources = getQrSources(tab);
     [els.paymentQrImage, els.paymentModalQr].forEach((img) => {
-      if (img) setQrImage(img, src, fallback, `${version}-${tab}`, label);
+      if (img) setQrImage(img, sources, `${version}-${tab}`, label);
     });
   }
 
-  function setQrImage(imgEl, primary, fallback, version, label) {
-    if (!imgEl) return;
+  function setQrImage(imgEl, sources, version, label) {
+    if (!imgEl || !sources.length) return;
 
-    const paths = [primary, fallback].filter(Boolean);
     let index = 0;
 
     const tryLoad = () => {
-      if (index >= paths.length) {
-        imgEl.removeAttribute('src');
+      if (index >= sources.length) {
         imgEl.alt = `${label} — image not found`;
         return;
       }
 
-      const path = paths[index++];
-      const url = `${resolveAssetUrl(path)}${path.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      const path = sources[index++];
+      const url = path.startsWith('data:')
+        ? path
+        : `${resolveAssetUrl(path)}${path.includes('?') ? '&' : '?'}v=${version}`;
 
       imgEl.onload = () => {
         imgEl.style.opacity = '1';

@@ -17,16 +17,14 @@ const CONFIG = {
     PRO_DURATION_DAYS: 30,
 
     /**
-     * 收款码图片 — 替换方法：
-     * 1. 把微信收款码保存为 assets/wechat-pay.png
-     * 2. 把支付宝收款码保存为 assets/alipay.png
-     * 3. 修改下方 QR_VERSION 数字（如 2→3）强制刷新缓存
+     * 收款码：优先使用 payment-qr.js 内嵌图片（Vercel 必部署）
+     * 更新 PNG 后运行: node build-payment-qr.js
      */
     WECHAT_QR: 'assets/wechat-pay.png',
     ALIPAY_QR: 'assets/alipay.png',
     WECHAT_QR_FALLBACK: 'assets/wechat-pay.svg',
     ALIPAY_QR_FALLBACK: 'assets/alipay.svg',
-    QR_VERSION: '4',
+    QR_VERSION: '5',
 
     CONTACT_WECHAT: 'zhao87616917',
     CONTACT_EMAIL: '706533929@qq.com',

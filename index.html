@@ -206,8 +206,7 @@
               <button type="button" class="payment-tab" data-pay-tab="alipay">Alipay</button>
             </div>
             <div class="payment-qr-wrap">
-              <img id="paymentQrImage" src="assets/wechat-pay.png" alt="WeChat Pay QR code" class="payment-qr"
-                   onerror="this.onerror=null;this.src='assets/wechat-pay.svg'">
+              <img id="paymentQrImage" src="" alt="WeChat Pay QR code" class="payment-qr">
               <p class="payment-qr-label" id="paymentQrLabel">WeChat Pay</p>
               <p class="payment-amount" id="paymentAmount"></p>
               <p class="payment-note" id="paymentNote"></p>
@@ -318,8 +317,7 @@
         <button type="button" class="payment-tab" data-pay-tab="alipay">Alipay</button>
       </div>
       <div class="payment-qr-wrap modal-qr-wrap">
-        <img id="paymentModalQr" src="assets/wechat-pay.png" alt="WeChat Pay QR code" class="payment-qr"
-             onerror="this.onerror=null;this.src='assets/wechat-pay.svg'">
+        <img id="paymentModalQr" src="" alt="WeChat Pay QR code" class="payment-qr">
         <p class="payment-qr-label" id="paymentModalQrLabel">WeChat Pay</p>
       </div>
       <p class="payment-note-sm" id="paymentModalNote"></p>
@@ -335,6 +333,7 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script src="config.js"></script>
+  <script src="payment-qr.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
