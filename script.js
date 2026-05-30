@@ -123,10 +123,40 @@
     proPriceDisplay: $('#proPriceDisplay')
   };
 
-  let currentPayTab = 'wechat';
+  function resetGenerateUI() {
+    isGenerating = false;
+    if (els.generateBtn) {
+      els.generateBtn.disabled = false;
+      els.generateBtn.textContent = '✨ Generate Anime Art';
+    }
+    if (els.progressPanel) els.progressPanel.classList.remove('active');
+  }
 
-  // ---- Initialization ----
+  function showConfigError() {
+    if (els.generateBtn) {
+      els.generateBtn.disabled = true;
+      els.generateBtn.textContent = 'Missing config.js';
+    }
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:64px;left:0;right:0;background:#fef2f2;color:#991b1b;padding:12px;text-align:center;z-index:9999;font-size:0.9rem';
+    banner.textContent = 'Error: config.js not found. Ensure config.js is in the same folder as index.html.';
+    document.body.prepend(banner);
+  }
+
+  function getConfig() {
+    if (typeof CONFIG === 'undefined') {
+      throw new Error('config.js not loaded. Please refresh the page or redeploy with config.js included.');
+    }
+    return CONFIG;
+  }
   function init() {
+    if (typeof CONFIG === 'undefined') {
+      console.error('config.js failed to load — Generate button will not work.');
+      showConfigError();
+      return;
+    }
+
+    resetGenerateUI();
     cleanupLegacyHistory();
     renderExampleGallery();
     renderTemplates();
@@ -267,7 +297,7 @@
   }
 
   function getPaymentConfig() {
-    return CONFIG.PAYMENT || {};
+    return getConfig().PAYMENT || {};
   }
 
   function isProUser() {
@@ -314,7 +344,7 @@
 
   function getRemainingQuota() {
     if (isProUser()) return Infinity;
-    const limit = CONFIG.DAILY_FREE_LIMIT || 5;
+    const limit = getConfig().DAILY_FREE_LIMIT || 5;
     return Math.max(0, limit - getQuota().used);
   }
 
@@ -339,7 +369,7 @@
     }
     els.quotaBadge.style.background = '';
     els.quotaBadge.style.color = '';
-    const limit = CONFIG.DAILY_FREE_LIMIT || 5;
+    const limit = getConfig().DAILY_FREE_LIMIT || 5;
     const remaining = getRemainingQuota();
     els.quotaBadge.textContent = `${remaining} / ${limit} free today`;
   }
@@ -513,7 +543,7 @@
   }
 
   function saveHistory(history) {
-    const max = CONFIG.MAX_HISTORY_ITEMS || 15;
+    const max = getConfig().MAX_HISTORY_ITEMS || 15;
     let trimmed = history.slice(0, max);
 
     while (trimmed.length >= 0) {
@@ -661,6 +691,14 @@
   async function handleGenerate() {
     if (isGenerating) return;
 
+    let cfg;
+    try {
+      cfg = getConfig();
+    } catch (err) {
+      showToast(err.message, 'error');
+      return;
+    }
+
     const prompt = els.prompt.value.trim();
     if (!prompt) {
       showToast('Please enter a prompt in English.', 'error');
@@ -670,7 +708,7 @@
     const count = parseInt(els.count.value, 10);
     const size = els.size.value;
 
-    if (!CONFIG.API_KEY || CONFIG.API_KEY.includes('YOUR_API_KEY')) {
+    if (!cfg.API_KEY || cfg.API_KEY.includes('YOUR_API_KEY')) {
       showToast('Please set your API key in config.js first.', 'error');
       return;
     }
@@ -688,7 +726,7 @@
 
     const fullPrompt = prompt + (STYLE_SUFFIXES[selectedStyle] || '');
     const apiSize = SIZE_TO_API[size] || '2048x2048';
-    const totalEst = count * (CONFIG.EST_SECONDS_PER_IMAGE || 15);
+    const totalEst = count * (cfg.EST_SECONDS_PER_IMAGE || 15);
 
     startProgress(0, count, totalEst);
     updateProgress(0, count, totalEst, `Connecting to Doubao Seedream 5.0 Lite...`);
@@ -735,7 +773,7 @@
 
   /** Build Authorization header for Volcano Ark (Bearer + API Key) */
   function getAuthHeader() {
-    const key = CONFIG.API_KEY.trim();
+    const key = getConfig().API_KEY.trim();
     if (key.startsWith('Bearer ')) return key;
     // Volcano Ark keys usually start with a UUID or sk- prefix from console
     return `Bearer ${key}`;
@@ -747,8 +785,9 @@
    * @returns {Promise<string[]>} array of data URLs
    */
   async function callSeedreamAPI(prompt, size, count, onProgress) {
+    const cfg = getConfig();
     const payload = {
-      model: CONFIG.MODEL_ID,
+      model: cfg.MODEL_ID,
       prompt,
       size,
       response_format: 'b64_json',
@@ -766,7 +805,7 @@
 
     let response;
     try {
-      response = await fetch(CONFIG.API_URL, {
+      response = await fetch(cfg.API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
