@@ -112,6 +112,8 @@
     activationFormModal: $('#activationFormModal'),
     activationCodeModal: $('#activationCodeModal'),
     paymentQrImage: $('#paymentQrImage'),
+    paymentQrLabel: $('#paymentQrLabel'),
+    paymentModalQrLabel: $('#paymentModalQrLabel'),
     paymentAmount: $('#paymentAmount'),
     paymentNote: $('#paymentNote'),
     paymentContact: $('#paymentContact'),
@@ -385,7 +387,8 @@
 
   // ---- Payment & Activation ----
   function initPaymentUI() {
-    const pay = getPaymentConfig();
+    try {
+      const pay = getPaymentConfig();
     const priceUsd = pay.PRICE_USD ?? 9.99;
     const priceCny = pay.PRICE_CNY ?? 68;
 
@@ -413,6 +416,15 @@
 
     setPayTab('wechat');
     updateProUI();
+    } catch (err) {
+      console.error('Payment UI init failed:', err);
+    }
+  }
+
+  function resolveAssetUrl(path) {
+    if (!path) return '';
+    if (/^(https?:|data:)/.test(path)) return path;
+    return new URL(path, document.baseURI || window.location.href).href;
   }
 
   function setPayTab(tab) {
@@ -424,37 +436,46 @@
     });
 
     const pay = getPaymentConfig();
-    const src = tab === 'wechat' ? pay.WECHAT_QR : pay.ALIPAY_QR;
-    const fallback = tab === 'wechat' ? pay.WECHAT_QR_FALLBACK : pay.ALIPAY_QR_FALLBACK;
+    const isWechat = tab === 'wechat';
+    const src = isWechat ? pay.WECHAT_QR : pay.ALIPAY_QR;
+    const fallback = isWechat ? pay.WECHAT_QR_FALLBACK : pay.ALIPAY_QR_FALLBACK;
     const version = pay.QR_VERSION || '1';
-    const label = tab === 'wechat' ? 'WeChat Pay' : 'Alipay';
+    const label = isWechat ? 'WeChat Pay' : 'Alipay';
+
+    if (els.paymentQrLabel) els.paymentQrLabel.textContent = label;
+    if (els.paymentModalQrLabel) els.paymentModalQrLabel.textContent = label;
 
     [els.paymentQrImage, els.paymentModalQr].forEach((img) => {
-      if (img) {
-        img.alt = `${label} QR code`;
-        setQrImage(img, src, fallback, `${version}-${tab}`);
-      }
+      if (img) setQrImage(img, src, fallback, `${version}-${tab}`, label);
     });
   }
 
-  function setQrImage(imgEl, primary, fallback, version) {
+  function setQrImage(imgEl, primary, fallback, version, label) {
     if (!imgEl) return;
-    const bust = (url) => (url ? `${url}${url.includes('?') ? '&' : '?'}v=${version}` : '');
 
-    const load = (url, isFallback) => {
-      if (!url) {
-        if (!isFallback && fallback) load(fallback, true);
+    const paths = [primary, fallback].filter(Boolean);
+    let index = 0;
+
+    const tryLoad = () => {
+      if (index >= paths.length) {
+        imgEl.removeAttribute('src');
+        imgEl.alt = `${label} — image not found`;
         return;
       }
-      imgEl.onload = () => { imgEl.style.opacity = '1'; };
-      imgEl.onerror = () => {
-        if (!isFallback && fallback) load(fallback, true);
+
+      const path = paths[index++];
+      const url = `${resolveAssetUrl(path)}${path.includes('?') ? '&' : '?'}t=${Date.now()}`;
+
+      imgEl.onload = () => {
+        imgEl.style.opacity = '1';
+        imgEl.alt = `${label} QR code`;
       };
-      imgEl.style.opacity = '0.5';
-      imgEl.src = bust(url);
+      imgEl.onerror = tryLoad;
+      imgEl.style.opacity = '1';
+      imgEl.src = url;
     };
 
-    load(primary || fallback || '', false);
+    tryLoad();
   }
 
   function updateProUI() {

@@ -1032,16 +1032,25 @@ textarea {
   margin-bottom: 20px;
 }
 
+.payment-qr-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
 .payment-qr {
   width: 220px;
   height: 220px;
+  min-width: 180px;
+  min-height: 180px;
   object-fit: contain;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
-  background: white;
-  margin: 0 auto 12px;
+  background: #fff;
+  margin: 0 auto 8px;
   display: block;
-  transition: opacity 0.2s;
+  opacity: 1;
 }
 
 .payment-amount {
