@@ -123,7 +123,7 @@
     proPriceDisplay: $('#proPriceDisplay')
   };
 
-  function resetGenerateUI() {
+  let currentPayTab = 'wechat';
     isGenerating = false;
     if (els.generateBtn) {
       els.generateBtn.disabled = false;
@@ -208,21 +208,22 @@
       if (e.target === els.lightboxModal) closeLightbox();
     });
 
-    // Pro / Payment modals
-    els.proModalClose.addEventListener('click', closeProModal);
-    els.proModalDismiss.addEventListener('click', closeProModal);
-    els.proModalPricing.addEventListener('click', () => {
+    // Pro / Payment — use delegation so tabs always work
+    els.proModalClose?.addEventListener('click', closeProModal);
+    els.proModalDismiss?.addEventListener('click', closeProModal);
+    els.proModalPricing?.addEventListener('click', () => {
       closeProModal();
-      openPaymentModal();
+      openPaymentPanel();
     });
-    els.upgradeProBtn.addEventListener('click', openPaymentModal);
-    els.paymentModalClose.addEventListener('click', closePaymentModal);
-    els.paymentModal.addEventListener('click', (e) => {
+    els.upgradeProBtn?.addEventListener('click', openPaymentPanel);
+    els.paymentModalClose?.addEventListener('click', closePaymentModal);
+    els.paymentModal?.addEventListener('click', (e) => {
       if (e.target === els.paymentModal) closePaymentModal();
     });
 
-    $$('.payment-tab').forEach((tab) => {
-      tab.addEventListener('click', () => setPayTab(tab.dataset.payTab));
+    document.addEventListener('click', (e) => {
+      const tab = e.target.closest('.payment-tab');
+      if (tab?.dataset.payTab) setPayTab(tab.dataset.payTab);
     });
 
     els.activationForm?.addEventListener('submit', (e) => {
@@ -414,19 +415,25 @@
     const pay = getPaymentConfig();
     const src = tab === 'wechat' ? pay.WECHAT_QR : pay.ALIPAY_QR;
     const fallback = tab === 'wechat' ? pay.WECHAT_QR_FALLBACK : pay.ALIPAY_QR_FALLBACK;
-    setQrImage(els.paymentQrImage, src, fallback);
-    setQrImage(els.paymentModalQr, src, fallback);
+    const version = pay.QR_VERSION || '1';
+    setQrImage(els.paymentQrImage, src, fallback, version);
+    setQrImage(els.paymentModalQr, src, fallback, version);
   }
 
-  function setQrImage(imgEl, primary, fallback) {
+  function setQrImage(imgEl, primary, fallback, version) {
     if (!imgEl) return;
+    const bust = (url) => url ? `${url}${url.includes('?') ? '&' : '?'}v=${version}` : '';
     const tryLoad = (src, isFallback) => {
+      if (!src) {
+        if (!isFallback && fallback) tryLoad(fallback, true);
+        return;
+      }
       imgEl.onerror = () => {
         if (!isFallback && fallback && src !== fallback) {
           tryLoad(fallback, true);
         }
       };
-      imgEl.src = src;
+      imgEl.src = bust(src);
     };
     tryLoad(primary || fallback || '', false);
   }
@@ -449,15 +456,35 @@
     }
     if (els.upgradeProBtn) {
       els.upgradeProBtn.textContent = isPro ? 'Pro Active ✓' : 'Upgrade to Pro';
-      els.upgradeProBtn.disabled = isPro;
+      els.upgradeProBtn.disabled = false;
+    }
+  }
+
+  /** Scroll to payment section and open modal */
+  function openPaymentPanel() {
+    if (isProUser()) {
+      showToast('You already have Pro activated!', 'info');
+      return;
+    }
+    try {
+      setPayTab(currentPayTab);
+      if (els.paymentModal) {
+        els.paymentModal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      const section = document.getElementById('paymentSection');
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      location.hash = 'pricing';
+    } catch (err) {
+      console.error('Payment panel error:', err);
+      showToast('Payment panel failed to open. Please refresh the page.', 'error');
     }
   }
 
   function openPaymentModal() {
-    setPayTab(currentPayTab);
-    els.paymentModal.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    location.hash = 'pricing';
+    openPaymentPanel();
   }
 
   function closePaymentModal() {

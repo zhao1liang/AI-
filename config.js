@@ -16,10 +16,17 @@ const CONFIG = {
     PRICE_USD: 9.99,
     PRO_DURATION_DAYS: 30,
 
-    WECHAT_QR: 'wechat-pay.svg',
-    ALIPAY_QR: 'alipay.png',
-    WECHAT_QR_FALLBACK: 'wechat-pay.svg',
-    ALIPAY_QR_FALLBACK: 'alipay.svg',
+    /**
+     * 收款码图片 — 替换方法：
+     * 1. 把微信收款码保存为 assets/wechat-pay.png
+     * 2. 把支付宝收款码保存为 assets/alipay.png
+     * 3. 修改下方 QR_VERSION 数字（如 2→3）强制刷新缓存
+     */
+    WECHAT_QR: 'assets/wechat-pay.png',
+    ALIPAY_QR: 'assets/alipay.png',
+    WECHAT_QR_FALLBACK: 'assets/wechat-pay.svg',
+    ALIPAY_QR_FALLBACK: 'assets/alipay.svg',
+    QR_VERSION: '2',
 
     CONTACT_WECHAT: 'zhao87616917',
     CONTACT_EMAIL: '706533929@qq.com',
