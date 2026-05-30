@@ -1,0 +1,337 @@
+[index.html](https://github.com/user-attachments/files/28416827/index.html)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Free AI anime generator powered by Doubao Seedream 5.0 Lite. Create stunning anime art, manga characters, and illustrations online.">
+  <meta name="keywords" content="AI anime generator, Doubao Seedream, manga art, anime character creator">
+  <title>AnimeGen AI — Free AI Anime Generator | Doubao Seedream 5.0</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 导航 -->
+  <header class="navbar">
+    <div class="container">
+      <a href="#home" class="logo">
+        <div class="logo-icon">✦</div>
+        <span>AnimeGen AI</span>
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#home" data-nav="home">Home</a></li>
+        <li><a href="#generator" data-nav="generator">Generator</a></li>
+        <li><a href="#history" data-nav="history">History</a></li>
+        <li><a href="#pricing" data-nav="pricing">Pricing</a></li>
+        <li><a href="#about" data-nav="about">About</a></li>
+      </ul>
+      <span class="quota-badge" id="quotaBadge">5 / 5 free today</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Home / Hero -->
+    <section id="home" class="hero">
+      <div class="container">
+        <h1>Create Stunning <span>AI Anime Art</span> in Seconds</h1>
+        <p>Transform your ideas into beautiful anime illustrations using Doubao Seedream 5.0 Lite. No design skills required — just type and generate.</p>
+        <div class="hero-cta">
+          <a href="#generator" class="btn btn-primary">Start Creating Free</a>
+          <a href="#pricing" class="btn btn-outline">View Plans</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Example Gallery -->
+    <section class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">AI-Generated Examples</h2>
+        <p class="section-subtitle">Explore what's possible with our anime generator. Click any image to enlarge.</p>
+        <div class="gallery-grid" id="exampleGallery"></div>
+      </div>
+    </section>
+
+    <!-- Generator -->
+    <section id="generator" class="section">
+      <div class="container">
+        <h2 class="section-title">Anime Generator</h2>
+        <p class="section-subtitle">Enter an English prompt, pick a style, and let Doubao Seedream 5.0 Lite bring your vision to life.</p>
+
+        <div class="generator-layout">
+          <!-- Left: Form -->
+          <div class="generator-panel">
+            <form id="generateForm">
+              <div class="form-group">
+                <label for="prompt">Prompt <span class="hint">(English only)</span></label>
+                <textarea id="prompt" name="prompt" placeholder="e.g. a girl with silver hair in cherry blossom garden, soft lighting, detailed eyes" required maxlength="2000"></textarea>
+              </div>
+
+              <div class="form-group">
+                <span class="templates-toggle" id="templatesToggle">📚 Browse 20 Prompt Templates ▾</span>
+                <div class="templates-grid" id="templatesGrid"></div>
+              </div>
+
+              <div class="form-group">
+                <label>Art Style</label>
+                <div class="style-options" id="styleOptions">
+                  <span class="style-chip active" data-style="anime">Anime</span>
+                  <span class="style-chip" data-style="cyberpunk">Cyberpunk</span>
+                  <span class="style-chip" data-style="ancient">Ancient</span>
+                  <span class="style-chip" data-style="realistic">Realistic</span>
+                  <span class="style-chip" data-style="chibi">Chibi</span>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="size">Image Size</label>
+                  <select id="size" name="size">
+                    <option value="512x512">512 × 512</option>
+                    <option value="768x1024">768 × 1024</option>
+                    <option value="1024x1024" selected>1024 × 1024</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="count">Number of Images</label>
+                  <select id="count" name="count">
+                    <option value="1">1 image</option>
+                    <option value="2">2 images</option>
+                    <option value="3">3 images</option>
+                    <option value="4">4 images</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" id="generateBtn" style="width:100%">
+                ✨ Generate Anime Art
+              </button>
+
+              <div class="progress-panel" id="progressPanel">
+                <div class="progress-bar-wrap">
+                  <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="progress-text">
+                  <span id="progressStatus">Preparing...</span>
+                  <span id="progressEta">~12s remaining</span>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Right: Results -->
+          <div class="results-panel" id="resultsPanel">
+            <div class="results-placeholder" id="resultsPlaceholder">
+              <div class="icon">🎨</div>
+              <p>Your generated anime art will appear here.<br>Fill in a prompt and click Generate.</p>
+            </div>
+            <div class="results-grid" id="resultsGrid" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- History -->
+    <section id="history" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Generation History</h2>
+        <p class="section-subtitle">All your creations are saved locally in your browser. Delete or regenerate anytime.</p>
+        <div id="historyContainer">
+          <div class="history-empty" id="historyEmpty">
+            <p>No generations yet. Create your first anime masterpiece!</p>
+            <a href="#generator" class="btn btn-primary" style="margin-top:16px">Go to Generator</a>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="section">
+      <div class="container">
+        <h2 class="section-title">Simple Pricing</h2>
+        <p class="section-subtitle">Start free, upgrade when you need unlimited creativity.</p>
+
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <h3>Free</h3>
+            <div class="price">$0<span>/month</span></div>
+            <ul class="pricing-features">
+              <li>5 generations per day</li>
+              <li>All 5 art styles</li>
+              <li>Up to 4 images per batch</li>
+              <li>PNG download (no watermark)</li>
+              <li>20 prompt templates</li>
+              <li class="disabled">Unlimited daily generations</li>
+              <li class="disabled">Priority generation speed</li>
+              <li class="disabled">Commercial license</li>
+            </ul>
+            <a href="#generator" class="btn btn-outline" style="width:100%">Get Started</a>
+          </div>
+
+          <div class="pricing-card featured">
+            <span class="badge">POPULAR</span>
+            <h3>Pro</h3>
+            <div class="price" id="proPriceDisplay">$9.99<span>/month</span></div>
+            <ul class="pricing-features">
+              <li>Unlimited daily generations</li>
+              <li>All 5 art styles</li>
+              <li>Up to 4 images per batch</li>
+              <li>PNG download (no watermark)</li>
+              <li>20 prompt templates</li>
+              <li>Priority generation speed</li>
+              <li>Commercial license included</li>
+              <li>Early access to new models</li>
+            </ul>
+            <button type="button" class="btn btn-primary" id="upgradeProBtn" style="width:100%">Upgrade to Pro</button>
+          </div>
+        </div>
+
+        <!-- Payment & Activation (shown when not Pro) -->
+        <div class="payment-section" id="paymentSection">
+          <h3 class="payment-section-title">Upgrade to Pro</h3>
+          <p class="payment-section-desc">Scan to pay, then enter your activation code to unlock unlimited generations.</p>
+          <div id="proActiveBanner" class="pro-active-banner" style="display:none">
+            <span>✓</span>
+            <div>
+              <strong>Pro Active</strong>
+              <p id="proExpiryText">Unlimited generations enabled</p>
+            </div>
+          </div>
+          <div id="paymentFlow">
+            <div class="payment-tabs">
+              <button type="button" class="payment-tab active" data-pay-tab="wechat">WeChat Pay</button>
+              <button type="button" class="payment-tab" data-pay-tab="alipay">Alipay</button>
+            </div>
+            <div class="payment-qr-wrap">
+              <img id="paymentQrImage" src="" alt="Payment QR code" class="payment-qr">
+              <p class="payment-amount" id="paymentAmount"></p>
+              <p class="payment-note" id="paymentNote"></p>
+            </div>
+            <div class="payment-steps">
+              <p><strong>Step 1</strong> Scan QR code and complete payment</p>
+              <p><strong>Step 2</strong> Contact us with payment screenshot to get your code</p>
+              <p class="payment-contact" id="paymentContact"></p>
+              <p><strong>Step 3</strong> Enter activation code below</p>
+            </div>
+            <form id="activationForm" class="activation-form">
+              <input type="text" id="activationCode" placeholder="Enter activation code (e.g. ANIME-VIP-2026)" autocomplete="off" maxlength="32">
+              <button type="submit" class="btn btn-primary">Activate Pro</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section id="about" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">About AnimeGen AI</h2>
+        <div class="about-content">
+          <p>AnimeGen AI is a free, browser-based anime art generator powered by ByteDance's Doubao Seedream 5.0 Lite model via Volcano Ark. We built this tool for anime fans, manga artists, and creators who want to bring their characters and scenes to life without complex software.</p>
+          <p>Everything runs in your browser — your prompts and generated images are stored locally on your device. We never upload your data to our servers. Simply add your Volcano Ark API key in <code>config.js</code> and start creating.</p>
+
+          <div class="about-features">
+            <div class="about-feature">
+              <div class="icon">⚡</div>
+              <h4>Fast Generation</h4>
+              <p>Powered by Seedream 5.0 Lite for high-quality 2K results</p>
+            </div>
+            <div class="about-feature">
+              <div class="icon">🔒</div>
+              <h4>Privacy First</h4>
+              <p>All data stays in your browser's local storage</p>
+            </div>
+            <div class="about-feature">
+              <div class="icon">📱</div>
+              <h4>Mobile Ready</h4>
+              <p>Works perfectly on phones, tablets, and desktops</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <h4>AnimeGen AI</h4>
+          <p style="font-size:0.9rem;line-height:1.6">The easiest way to create AI anime art online. Powered by Doubao Seedream 5.0 Lite.</p>
+        </div>
+        <div>
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#generator">Generator</a></li>
+            <li><a href="#history">History</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+          </ul>
+        </div>
+        <div class="seo-articles">
+          <h4>Learn More</h4>
+          <a href="#" data-seo-article="1">Best AI Anime Generators of 2026 (Free &amp; Paid)</a>
+          <a href="#" data-seo-article="2">How to Make AI Anime Characters That Look Unique</a>
+          <a href="#" data-seo-article="3">Free AI Manga Tools for Beginners (No Watermark)</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 AnimeGen AI. All rights reserved. Powered by Volcano Ark · Doubao Seedream.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Lightbox Modal -->
+  <div class="modal-overlay" id="lightboxModal">
+    <div class="modal modal-lightbox">
+      <button class="modal-close" id="lightboxClose" aria-label="Close">&times;</button>
+      <img id="lightboxImage" src="" alt="Enlarged view">
+    </div>
+  </div>
+
+  <!-- Pro Upgrade Modal (quota limit) -->
+  <div class="modal-overlay" id="proModal">
+    <div class="modal modal-pro modal-pro-limit">
+      <button class="modal-close" id="proModalClose" aria-label="Close">&times;</button>
+      <div class="icon">👑</div>
+      <h3>Daily Limit Reached</h3>
+      <p>You've used all free generations today. Upgrade to Pro for unlimited anime art creation.</p>
+      <button type="button" class="btn btn-primary" id="proModalPricing" style="width:100%">Upgrade Now</button>
+      <button type="button" class="btn btn-ghost" id="proModalDismiss" style="margin-top:12px;width:100%">Maybe Later</button>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal-overlay" id="paymentModal">
+    <div class="modal modal-payment">
+      <button class="modal-close" id="paymentModalClose" aria-label="Close">&times;</button>
+      <h3>Upgrade to Pro</h3>
+      <p class="modal-payment-sub" id="paymentModalPrice"></p>
+      <div class="payment-tabs">
+        <button type="button" class="payment-tab active" data-pay-tab="wechat">WeChat</button>
+        <button type="button" class="payment-tab" data-pay-tab="alipay">Alipay</button>
+      </div>
+      <div class="payment-qr-wrap modal-qr-wrap">
+        <img id="paymentModalQr" src="" alt="Payment QR code" class="payment-qr">
+      </div>
+      <p class="payment-note-sm" id="paymentModalNote"></p>
+      <p class="payment-contact-sm" id="paymentModalContact"></p>
+      <form id="activationFormModal" class="activation-form">
+        <input type="text" id="activationCodeModal" placeholder="Activation code" autocomplete="off" maxlength="32">
+        <button type="submit" class="btn btn-primary" style="width:100%">Activate Pro</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
