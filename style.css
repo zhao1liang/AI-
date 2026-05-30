@@ -932,6 +932,13 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  scroll-margin-top: 80px;
+  transition: box-shadow 0.3s, border-color 0.3s;
+}
+
+.payment-section.payment-highlight {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
 }
 
 .payment-section-title {
@@ -993,6 +1000,9 @@ textarea {
   transition: all var(--transition);
   font-family: inherit;
   color: var(--text-muted);
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
 }
 
 .payment-tab:hover {
@@ -1031,6 +1041,7 @@ textarea {
   background: white;
   margin: 0 auto 12px;
   display: block;
+  transition: opacity 0.2s;
 }
 
 .payment-amount {

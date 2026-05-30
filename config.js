@@ -26,7 +26,7 @@ const CONFIG = {
     ALIPAY_QR: 'assets/alipay.png',
     WECHAT_QR_FALLBACK: 'assets/wechat-pay.svg',
     ALIPAY_QR_FALLBACK: 'assets/alipay.svg',
-    QR_VERSION: '2',
+    QR_VERSION: '3',
 
     CONTACT_WECHAT: 'zhao87616917',
     CONTACT_EMAIL: '706533929@qq.com',

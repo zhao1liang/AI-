@@ -124,6 +124,8 @@
   };
 
   let currentPayTab = 'wechat';
+
+  function resetGenerateUI() {
     isGenerating = false;
     if (els.generateBtn) {
       els.generateBtn.disabled = false;
@@ -215,15 +217,21 @@
       closeProModal();
       openPaymentPanel();
     });
-    els.upgradeProBtn?.addEventListener('click', openPaymentPanel);
-    els.paymentModalClose?.addEventListener('click', closePaymentModal);
-    els.paymentModal?.addEventListener('click', (e) => {
-      if (e.target === els.paymentModal) closePaymentModal();
+    els.upgradeProBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      openPaymentPanel();
     });
 
     document.addEventListener('click', (e) => {
       const tab = e.target.closest('.payment-tab');
-      if (tab?.dataset.payTab) setPayTab(tab.dataset.payTab);
+      if (!tab?.dataset.payTab) return;
+      e.preventDefault();
+      setPayTab(tab.dataset.payTab);
+    });
+
+    els.paymentModalClose?.addEventListener('click', closePaymentModal);
+    els.paymentModal?.addEventListener('click', (e) => {
+      if (e.target === els.paymentModal) closePaymentModal();
     });
 
     els.activationForm?.addEventListener('submit', (e) => {
@@ -408,34 +416,45 @@
   }
 
   function setPayTab(tab) {
+    if (tab !== 'wechat' && tab !== 'alipay') return;
     currentPayTab = tab;
-    $$('.payment-tab').forEach((t) => {
+
+    document.querySelectorAll('.payment-tab').forEach((t) => {
       t.classList.toggle('active', t.dataset.payTab === tab);
     });
+
     const pay = getPaymentConfig();
     const src = tab === 'wechat' ? pay.WECHAT_QR : pay.ALIPAY_QR;
     const fallback = tab === 'wechat' ? pay.WECHAT_QR_FALLBACK : pay.ALIPAY_QR_FALLBACK;
     const version = pay.QR_VERSION || '1';
-    setQrImage(els.paymentQrImage, src, fallback, version);
-    setQrImage(els.paymentModalQr, src, fallback, version);
+    const label = tab === 'wechat' ? 'WeChat Pay' : 'Alipay';
+
+    [els.paymentQrImage, els.paymentModalQr].forEach((img) => {
+      if (img) {
+        img.alt = `${label} QR code`;
+        setQrImage(img, src, fallback, `${version}-${tab}`);
+      }
+    });
   }
 
   function setQrImage(imgEl, primary, fallback, version) {
     if (!imgEl) return;
-    const bust = (url) => url ? `${url}${url.includes('?') ? '&' : '?'}v=${version}` : '';
-    const tryLoad = (src, isFallback) => {
-      if (!src) {
-        if (!isFallback && fallback) tryLoad(fallback, true);
+    const bust = (url) => (url ? `${url}${url.includes('?') ? '&' : '?'}v=${version}` : '');
+
+    const load = (url, isFallback) => {
+      if (!url) {
+        if (!isFallback && fallback) load(fallback, true);
         return;
       }
+      imgEl.onload = () => { imgEl.style.opacity = '1'; };
       imgEl.onerror = () => {
-        if (!isFallback && fallback && src !== fallback) {
-          tryLoad(fallback, true);
-        }
+        if (!isFallback && fallback) load(fallback, true);
       };
-      imgEl.src = bust(src);
+      imgEl.style.opacity = '0.5';
+      imgEl.src = bust(url);
     };
-    tryLoad(primary || fallback || '', false);
+
+    load(primary || fallback || '', false);
   }
 
   function updateProUI() {
@@ -460,26 +479,31 @@
     }
   }
 
-  /** Scroll to payment section and open modal */
+  /** Jump to payment section and open pay modal */
   function openPaymentPanel() {
     if (isProUser()) {
       showToast('You already have Pro activated!', 'info');
       return;
     }
-    try {
-      setPayTab(currentPayTab);
-      if (els.paymentModal) {
-        els.paymentModal.classList.add('open');
-        document.body.style.overflow = 'hidden';
-      }
-      const section = document.getElementById('paymentSection');
-      if (section) {
-        section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      location.hash = 'pricing';
-    } catch (err) {
-      console.error('Payment panel error:', err);
-      showToast('Payment panel failed to open. Please refresh the page.', 'error');
+
+    closeProModal();
+
+    const section = document.getElementById('paymentSection');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      section.classList.add('payment-highlight');
+      setTimeout(() => section.classList.remove('payment-highlight'), 2000);
+    }
+
+    setPayTab(currentPayTab || 'wechat');
+
+    if (els.paymentModal) {
+      els.paymentModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    if (location.hash !== '#pricing') {
+      history.pushState(null, '', '#pricing');
     }
   }
 
