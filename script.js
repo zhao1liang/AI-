@@ -21,45 +21,183 @@
     cyberpunk: ', cyberpunk anime style, neon lights, futuristic city, holographic elements, dark atmosphere, sci-fi aesthetic',
     ancient: ', ancient Chinese fantasy style, traditional hanfu, ink wash painting influence, elegant composition, historical atmosphere',
     realistic: ', semi-realistic anime style, detailed shading, photorealistic lighting, high detail portrait, cinematic quality',
+    liveaction: ', photorealistic AI live-action style, real human proportions, cinematic photography, hyperrealistic skin and fabric texture, movie poster quality, dramatic atmosphere, 8K photo realism',
     chibi: ', chibi style, cute Q-version character, oversized head, kawaii expression, simple background, adorable proportions'
   };
 
-  // Map UI size to Seedream API pixel size (2K recommended values)
+  // Map UI size to Seedream API pixel size (max quality)
   const SIZE_TO_API = {
-    '512x512': '2048x2048',
-    '768x1024': '1728x2304',
-    '1024x1024': '2048x2048'
+    '1024x1024': '2048x2048',
+    '1536x2048': '2592x3456',
+    '2048x2048': '3072x3072',
+    '3840x2160': '4096x2304',
+    '2160x3840': '2304x4096'
   };
+
+  // Faster API sizes — shorter render time
+  const SIZE_TO_API_FAST = {
+    '1024x1024': '2048x2048',
+    '1536x2048': '1728x2304',
+    '2048x2048': '2048x2048',
+    '3840x2160': '2848x1600',
+    '2160x3840': '1600x2848'
+  };
+
+  const SIZE_LABELS = {
+    '1024x1024': '2K HD',
+    '1536x2048': '3K Portrait',
+    '2048x2048': '3K Square',
+    '3840x2160': '4K Ultra HD',
+    '2160x3840': '4K Portrait'
+  };
+
+  const SIZE_HINTS = {
+    '1024x1024': '2K HD — Fastest (~8s)',
+    '1536x2048': '3K vertical — ideal for phone wallpapers',
+    '2048x2048': '3K square — social media posts',
+    '3840x2160': '4K Ultra HD — best for wallpapers & prints',
+    '2160x3840': '4K vertical — mobile & poster format'
+  };
+
+  const HD_QUALITY_SUFFIX = ', ultra high resolution, 4K quality, sharp focus, intricate details, professional anime illustration';
+
+  const SIZE_EST_SECONDS = {
+    '1024x1024': 10,
+    '1536x2048': 14,
+    '2048x2048': 16,
+    '3840x2160': 22,
+    '2160x3840': 22
+  };
+
+  const SIZE_EST_SECONDS_FAST = {
+    '1024x1024': 8,
+    '1536x2048': 10,
+    '2048x2048': 12,
+    '3840x2160': 16,
+    '2160x3840': 16
+  };
+
+  function getApiSize(uiSize) {
+    const cfg = getConfig();
+    const map = cfg.FAST_GENERATION !== false ? SIZE_TO_API_FAST : SIZE_TO_API;
+    return map[uiSize] || '2048x2048';
+  }
+
+  function getEstSecondsPerImage(uiSize) {
+    const cfg = getConfig();
+    const map = cfg.FAST_GENERATION !== false ? SIZE_EST_SECONDS_FAST : SIZE_EST_SECONDS;
+    return map[uiSize] || cfg.EST_SECONDS_PER_IMAGE || 12;
+  }
+
+  function buildGenerationPrompt(prompt, size) {
+    const style = STYLE_SUFFIXES[selectedStyle] || '';
+    const epicBg = ', epic grand scale background, vast cinematic environment, atmospheric depth';
+    if (is4KSize(size)) {
+      return prompt + style + epicBg + HD_QUALITY_SUFFIX;
+    }
+    return prompt + style + epicBg + ', high quality, detailed illustration';
+  }
+
+  // Prompt writing checklist — used for live blue tips below textarea
+  const PROMPT_CHECKS = [
+    {
+      id: 'character',
+      patterns: /\b(girl|boy|woman|man|warrior|princess|knight|idol|witch|ninja|mermaid|goddess|pilot|student|maid|samurai|vampire|spirit|hero|character|person)\b/i,
+      ok: 'Character defined — who is in the scene is clear.',
+      miss: 'Add <strong>who</strong> appears: e.g. silver-haired warrior princess, cyberpunk samurai, cat girl guardian.'
+    },
+    {
+      id: 'appearance',
+      patterns: /\b(hair|eyes|skin|face|expression|smile|outfit|dress|uniform|armor|cloak|ears|tail|heterochromia|blonde|silver|pink|blue eyes)\b/i,
+      ok: 'Appearance details present — hair, eyes, or outfit described.',
+      miss: 'Describe <strong>appearance</strong>: hair color & length, eye color, expression, clothing material and colors.'
+    },
+    {
+      id: 'background',
+      patterns: /\b(background|sky|cloud|mountain|city|forest|palace|temple|ocean|nebula|galaxy|battlefield|ruins|lake|street|castle|horizon|valley|rooftop|kingdom|arena|shrine|aurora|megacity|cliff|sea of clouds)\b/i,
+      ok: 'Epic background included — environment adds scale and mood.',
+      miss: 'Add a <strong>grand background</strong>: floating celestial palace, cosmic nebula, ancient temple ruins, aurora over mountains, neon megacity skyline.'
+    },
+    {
+      id: 'lighting',
+      patterns: /\b(light|lighting|sunlight|moonlight|golden hour|rim light|god rays|volumetric|glow|neon|spotlight|shadow|backlit|sunset|sunrise|dramatic)\b/i,
+      ok: 'Lighting described — helps depth and cinematic feel.',
+      miss: 'Add <strong>lighting</strong>: cinematic golden hour, epic god rays, dramatic rim light, moonlight through storm clouds, neon reflections.'
+    },
+    {
+      id: 'camera',
+      patterns: /\b(close-up|portrait|full body|wide shot|cinematic|angle|depth of field|bokeh|low angle|bird eye|IMAX|composition|dynamic pose|establishing shot)\b/i,
+      ok: 'Camera / composition specified — guides framing and scale.',
+      miss: 'Add <strong>camera angle</strong>: wide cinematic establishing shot, low-angle heroic view, full-body dynamic pose, extreme depth of field.'
+    },
+    {
+      id: 'mood',
+      patterns: /\b(mood|atmosphere|melancholic|epic|mystical|dreamy|intense|peaceful|heroic|dark|ethereal|wind|petals|rain|snow|mist|particles|magical)\b/i,
+      ok: 'Mood & atmosphere set — emotional tone is clear.',
+      miss: 'Add <strong>mood & atmosphere</strong>: wind and cherry petals, swirling snow, magical particles, melancholic sunset, epic storm energy.'
+    },
+    {
+      id: 'quality',
+      patterns: /\b(masterpiece|best quality|highly detailed|8k|4k|ultra hd|wallpaper|award|detailed|sharp focus|hyperrealistic)\b/i,
+      ok: 'Quality tags added — helps render fine detail at HD / 4K.',
+      miss: 'Add <strong>quality tags</strong>: masterpiece, best quality, highly detailed, 8k wallpaper, sharp focus.'
+    }
+  ];
 
   // 20 high-quality prompt templates
   const PROMPT_TEMPLATES = [
-    { title: 'Cherry Blossom Girl', prompt: 'beautiful anime girl with long pink hair standing under cherry blossom trees, petals falling, soft spring sunlight, detailed eyes, masterpiece' },
-    { title: 'Cyber Samurai', prompt: 'futuristic samurai warrior in neon-lit Tokyo alley, katana glowing blue, rain reflections, cyberpunk anime style, dramatic pose' },
-    { title: 'Magic Academy Student', prompt: 'young witch student in ornate academy uniform, holding glowing spellbook, magical particles, fantasy castle background, detailed illustration' },
-    { title: 'Space Pilot', prompt: 'confident female space pilot in sleek mecha suit, cockpit view of stars, sci-fi anime aesthetic, dynamic lighting, heroic expression' },
-    { title: 'Forest Spirit', prompt: 'ethereal forest spirit with antlers and flowing green hair, bioluminescent mushrooms, mystical atmosphere, fantasy anime art' },
-    { title: 'Street Fashion Idol', prompt: 'trendy anime idol in colorful street fashion, urban Tokyo background, confident pose, pop art colors, magazine cover quality' },
-    { title: 'Dragon Rider', prompt: 'brave knight riding a majestic red dragon over clouds, epic fantasy scene, wind in hair, cinematic wide shot, detailed scales' },
-    { title: 'Cafe Date Scene', prompt: 'cute couple in cozy anime cafe, warm lighting, coffee cups on table, slice of life style, soft pastel colors, heartwarming mood' },
-    { title: 'Dark Vampire Lord', prompt: 'elegant vampire lord in gothic castle, crimson eyes, black cape, moonlight through stained glass, dark fantasy anime, dramatic shadows' },
-    { title: 'School Rooftop Sunset', prompt: 'lonely student on school rooftop at golden hour, wind blowing skirt, city skyline, melancholic beautiful atmosphere, shoujo style' },
-    { title: 'Mecha Battle', prompt: 'giant mecha in intense battle pose, explosions in background, dynamic action lines, mecha anime style, detailed mechanical design' },
-    { title: 'Underwater Mermaid', prompt: 'anime mermaid with iridescent tail swimming among coral reefs, sun rays through water, bubbles, dreamy aquatic colors' },
-    { title: 'Ninja in Moonlight', prompt: 'stealthy ninja on rooftop under full moon, mask and headband, action pose, Japanese temple background, cool blue tones' },
-    { title: 'Music Concert', prompt: 'energetic anime rock singer on stage, spotlight, crowd silhouettes, electric guitar, vibrant concert lighting, dynamic composition' },
-    { title: 'Winter Snow Princess', prompt: 'elegant ice princess in white gown, snowflakes swirling, frozen palace background, sparkling crystals, ethereal cold beauty' },
-    { title: 'Cat Girl Cafe', prompt: 'adorable cat girl maid in cozy cafe, cat ears and tail, serving tea, warm interior, kawaii style, cheerful expression' },
-    { title: 'Post-Apocalypse Survivor', prompt: 'tough anime survivor in wasteland ruins, dusty coat, sunset horizon, muted earth tones, determined expression, cinematic' },
-    { title: 'Celestial Goddess', prompt: 'goddess floating among stars and galaxies, flowing cosmic dress, divine golden aura, ethereal beauty, space fantasy anime' },
-    { title: 'Rival Sword Duel', prompt: 'two anime swordsmen clashing blades, sparks flying, intense expressions, dojo at dusk, action anime style, motion blur' },
-    { title: 'Peaceful Countryside', prompt: 'girl in sundress walking through lavender fields, windmill in distance, Studio Ghibli inspired, peaceful countryside, soft watercolor feel' }
+    { title: 'Cherry Blossom Girl', prompt: 'beautiful anime girl with long pink hair standing on cliff edge, vast cherry blossom valley stretching to horizon, petals swirling in wind, epic golden hour god rays, masterpiece' },
+    { title: 'Cyber Samurai', prompt: 'futuristic samurai warrior on skyscraper rooftop, neon megacity skyline below, katana glowing blue, rain and lightning, cyberpunk anime style, dramatic wide shot' },
+    { title: 'Magic Academy Student', prompt: 'young witch student in ornate uniform, floating magical academy above clouds, spell circles glowing, epic fantasy sky, detailed illustration' },
+    { title: 'Space Pilot', prompt: 'confident female space pilot in sleek mecha suit, cockpit view of massive nebula and distant planets, sci-fi anime aesthetic, cinematic scale' },
+    { title: 'Forest Spirit', prompt: 'ethereal forest spirit with antlers, ancient giant trees and bioluminescent forest, mist and god rays, mystical epic atmosphere, fantasy anime art' },
+    { title: 'Street Fashion Idol', prompt: 'trendy anime idol in colorful street fashion, towering neon Tokyo skyline at night, confident pose, epic urban scale, magazine cover quality' },
+    { title: 'Dragon Rider', prompt: 'brave knight riding a majestic red dragon soaring above sea of clouds, epic mountain range below, wind in hair, cinematic IMAX wide shot' },
+    { title: 'Live-Action Hero', prompt: 'photorealistic AI warrior on ancient temple ruins at dawn, vast misty mountains, dramatic rim light, cinematic live-action photography, hyperrealistic detail' },
+    { title: 'Dark Vampire Lord', prompt: 'elegant vampire lord in towering gothic cathedral, crimson eyes, moonlight through stained glass, epic dark fantasy scale, dramatic shadows' },
+    { title: 'Cosmic Rooftop', prompt: 'student on rooftop under aurora borealis and star-filled sky, sprawling city lights below, epic melancholic atmosphere, shoujo style' },
+    { title: 'Mecha Battle', prompt: 'giant mecha in apocalyptic battlefield, massive explosions and burning skyline, dynamic action lines, epic mecha anime scale' },
+    { title: 'Underwater Kingdom', prompt: 'anime mermaid with iridescent tail in vast underwater crystal kingdom, sun rays piercing deep ocean, epic aquatic fantasy scale' },
+    { title: 'Ninja in Moonlight', prompt: 'stealthy ninja on ancient temple roof under full moon, cherry blossoms and mountain vista, epic Japanese landscape, cool blue tones' },
+    { title: 'Music Concert', prompt: 'energetic anime rock singer on massive stadium stage, epic spotlight beams, sea of crowd lights, vibrant concert atmosphere' },
+    { title: 'Winter Snow Princess', prompt: 'elegant ice princess in white gown, towering frozen palace and aurora sky, snowflakes swirling, sparkling crystals, ethereal epic beauty' },
+    { title: 'Celestial Cat Guardian', prompt: 'mystical cat girl guardian on floating island above clouds, celestial palace in background, epic fantasy sky, kawaii yet grand scale' },
+    { title: 'Post-Apocalypse Survivor', prompt: 'tough anime survivor overlooking vast wasteland ruins, crimson sunset horizon, epic desolate landscape, cinematic wide shot' },
+    { title: 'Celestial Goddess', prompt: 'goddess floating among galaxies and cosmic nebula, flowing stellar dress, divine golden aura, epic space fantasy scale' },
+    { title: 'Rival Sword Duel', prompt: 'two anime swordsmen clashing on crumbling cliff edge, storm clouds and lightning, epic duel atmosphere, action anime style' },
+    { title: 'Epic Countryside', prompt: 'girl in sundress in endless lavender fields under dramatic sunset sky, windmill and mountains on horizon, Studio Ghibli epic scale, soft watercolor feel' }
   ];
 
-  // Example gallery images (anime-style placeholders via picsum seeds)
-  const EXAMPLE_IMAGES = Array.from({ length: 12 }, (_, i) => ({
-    src: `https://picsum.photos/seed/animegen${i + 1}/400/400`,
-    alt: `AI anime example ${i + 1}`
-  }));
+  // Example gallery pool — random subset shown each visit
+  const EXAMPLE_POOL = [
+    { title: 'Cherry Blossom Girl', seed: 'anime-sakura' },
+    { title: 'Cyber Samurai', seed: 'anime-cyber' },
+    { title: 'Magic Academy', seed: 'anime-magic' },
+    { title: 'Space Pilot', seed: 'anime-space' },
+    { title: 'Forest Spirit', seed: 'anime-forest' },
+    { title: 'Street Idol', seed: 'anime-idol' },
+    { title: 'Dragon Rider', seed: 'anime-dragon' },
+    { title: 'Cafe Scene', seed: 'anime-cafe' },
+    { title: 'Vampire Lord', seed: 'anime-vampire' },
+    { title: 'Rooftop Sunset', seed: 'anime-rooftop' },
+    { title: 'Mecha Battle', seed: 'anime-mecha' },
+    { title: 'Underwater Dream', seed: 'anime-mermaid' },
+    { title: 'Moonlit Ninja', seed: 'anime-ninja' },
+    { title: 'Concert Night', seed: 'anime-concert' },
+    { title: 'Snow Princess', seed: 'anime-snow' },
+    { title: 'Cat Girl Maid', seed: 'anime-catgirl' },
+    { title: 'Wasteland Hero', seed: 'anime-wasteland' },
+    { title: 'Cosmic Goddess', seed: 'anime-goddess' },
+    { title: 'Sword Duel', seed: 'anime-duel' },
+    { title: 'Countryside Walk', seed: 'anime-country' },
+    { title: 'Neon City', seed: 'anime-neon' },
+    { title: 'Fantasy Knight', seed: 'anime-knight' },
+    { title: 'Shrine Maiden', seed: 'anime-shrine' },
+    { title: 'Steampunk Girl', seed: 'anime-steam' }
+  ];
+
+  let galleryRotateTimer = null;
+  let gallerySessionSeed = 0;
 
   // In-memory cache for full-res images (current session only)
   const sessionImages = new Map();
@@ -68,6 +206,7 @@
   let selectedStyle = 'anime';
   let isGenerating = false;
   let progressTimer = null;
+  let progressState = null;
 
   // ---- DOM References ----
   const $ = (sel) => document.querySelector(sel);
@@ -78,6 +217,8 @@
     navLinks: $('#navLinks'),
     quotaBadge: $('#quotaBadge'),
     exampleGallery: $('#exampleGallery'),
+    galleryTrack1: $('#galleryTrack1'),
+    galleryTrack2: $('#galleryTrack2'),
     generateForm: $('#generateForm'),
     prompt: $('#prompt'),
     templatesToggle: $('#templatesToggle'),
@@ -89,8 +230,11 @@
     progressPanel: $('#progressPanel'),
     progressBar: $('#progressBar'),
     progressStatus: $('#progressStatus'),
-    progressEta: $('#progressEta'),
+    progressTotal: $('#progressTotal'),
+    progressElapsed: $('#progressElapsed'),
+    progressTime: $('#progressTime'),
     resultsPlaceholder: $('#resultsPlaceholder'),
+    resultsSummary: $('#resultsSummary'),
     resultsGrid: $('#resultsGrid'),
     historyEmpty: $('#historyEmpty'),
     historyList: $('#historyList'),
@@ -122,7 +266,12 @@
     paymentFlow: $('#paymentFlow'),
     proActiveBanner: $('#proActiveBanner'),
     proExpiryText: $('#proExpiryText'),
-    proPriceDisplay: $('#proPriceDisplay')
+    proPriceDisplay: $('#proPriceDisplay'),
+    promptCharCount: $('#promptCharCount'),
+    promptQuality: $('#promptQuality'),
+    promptTips: $('#promptTips'),
+    promptTipsList: $('#promptTipsList'),
+    sizeHint: $('#sizeHint')
   };
 
   let currentPayTab = 'wechat';
@@ -164,6 +313,7 @@
     cleanupLegacyHistory();
     renderExampleGallery();
     renderTemplates();
+    initPromptHelpers();
     bindEvents();
     initPaymentUI();
     updateQuotaBadge();
@@ -205,6 +355,9 @@
       e.preventDefault();
       handleGenerate();
     });
+
+    els.prompt?.addEventListener('input', updatePromptFeedback);
+    els.size?.addEventListener('change', updateSizeHint);
 
     // Lightbox
     els.lightboxClose.addEventListener('click', closeLightbox);
@@ -264,25 +417,197 @@
     });
   }
 
-  // ---- Example Gallery ----
-  function renderExampleGallery() {
-    els.exampleGallery.innerHTML = EXAMPLE_IMAGES.map(
-      (img) => `
-        <div class="gallery-item" data-src="${img.src}">
-          <img src="${img.src}" alt="${img.alt}" loading="lazy">
-          <div class="overlay"><span>Click to enlarge</span></div>
-        </div>
-      `
-    ).join('');
-
-    els.exampleGallery.addEventListener('click', (e) => {
-      const item = e.target.closest('.gallery-item');
-      if (!item) return;
-      openLightbox(item.dataset.src);
-    });
+  // ---- Example Gallery (auto-scroll + random each visit) ----
+  function getGallerySessionSeed() {
+    let seed = sessionStorage.getItem('animeGen_gallerySeed');
+    if (!seed) {
+      seed = String(Date.now());
+      sessionStorage.setItem('animeGen_gallerySeed', seed);
+    }
+    return seed;
   }
 
-  // ---- Prompt Templates ----
+  function shuffleArray(arr) {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+
+  function pickExampleImages(count) {
+    gallerySessionSeed = getGallerySessionSeed();
+    const batch = Math.floor(Date.now() / 60000);
+    return shuffleArray(EXAMPLE_POOL)
+      .slice(0, count)
+      .map((item, i) => ({
+        src: `https://picsum.photos/seed/${item.seed}-${gallerySessionSeed}-${batch}-${i}/520/520`,
+        alt: item.title,
+        title: item.title
+      }));
+  }
+
+  function galleryItemHtml(img) {
+    return `
+      <div class="gallery-item" data-src="${img.src}">
+        <img src="${img.src}" alt="${escapeHtml(img.alt)}" loading="lazy">
+        <div class="overlay"><span>${escapeHtml(img.title)}</span></div>
+      </div>
+    `;
+  }
+
+  function fillGalleryTrack(trackEl, images) {
+    if (!trackEl) return;
+    const doubled = [...images, ...images];
+    trackEl.innerHTML = doubled.map(galleryItemHtml).join('');
+  }
+
+  function renderExampleGallery() {
+    const row1 = pickExampleImages(8);
+    const row2 = pickExampleImages(8);
+
+    fillGalleryTrack(els.galleryTrack1, row1);
+    fillGalleryTrack(els.galleryTrack2, row2);
+
+    if (!els.exampleGallery._bound) {
+      els.exampleGallery.addEventListener('click', (e) => {
+        const item = e.target.closest('.gallery-item');
+        if (!item) return;
+        openLightbox(item.dataset.src);
+      });
+      els.exampleGallery._bound = true;
+    }
+
+    if (galleryRotateTimer) clearInterval(galleryRotateTimer);
+    galleryRotateTimer = setInterval(refreshExampleGallery, 45000);
+  }
+
+  function refreshExampleGallery() {
+    els.exampleGallery?.classList.add('gallery-refreshing');
+    setTimeout(() => {
+      renderExampleGalleryTracksOnly();
+      els.exampleGallery?.classList.remove('gallery-refreshing');
+    }, 400);
+  }
+
+  function renderExampleGalleryTracksOnly() {
+    fillGalleryTrack(els.galleryTrack1, pickExampleImages(8));
+    fillGalleryTrack(els.galleryTrack2, pickExampleImages(8));
+  }
+
+  // ---- Prompt Helpers ----
+  function initPromptHelpers() {
+    updatePromptFeedback();
+    updateSizeHint();
+  }
+
+  function analyzePrompt(text) {
+    const lower = text.toLowerCase();
+    const hits = [];
+    const misses = [];
+
+    PROMPT_CHECKS.forEach((check) => {
+      const found = check.patterns.test(lower);
+      if (found) hits.push(check);
+      else misses.push(check);
+    });
+
+    return { hits, misses, len: text.length };
+  }
+
+  function buildPromptTips(analysis) {
+    const { hits, misses, len } = analysis;
+    const items = [];
+
+    if (len === 0) {
+      return [
+        'Start with <strong>character + epic background</strong> in one sentence — e.g. "silver-haired warrior on cliff edge, vast floating palace above clouds".',
+        'Then layer in <strong>appearance</strong> (hair, eyes, outfit), <strong>lighting</strong> (golden hour, god rays), and <strong>camera</strong> (wide cinematic shot).',
+        'Finish with quality tags: <strong>masterpiece, best quality, highly detailed, 8k wallpaper</strong>.',
+        'English prompts work best. More specific detail = sharper 4K output.'
+      ];
+    }
+
+    if (len < 40) {
+      items.push('Your prompt is short — AI will guess missing details. Expand each layer below.');
+    } else if (len < 100) {
+      items.push('Good length so far — add the missing layers below for richer HD / 4K results.');
+    } else if (hits.length >= 5) {
+      items.push('✨ Strong, well-layered prompt — ready for high-detail generation.');
+    } else {
+      items.push('Solid length — polish the remaining layers for even better composition.');
+    }
+
+    misses.slice(0, 4).forEach((check) => {
+      items.push(check.miss);
+    });
+
+    hits.slice(0, 3).forEach((check) => {
+      items.push(`✓ ${check.ok}`);
+    });
+
+    if (len >= 120 && misses.length === 0) {
+      items.push('Tip: Try Live-Action AI style for photorealistic cinematic results, or Anime for classic illustration.');
+    }
+
+    return items.slice(0, 6);
+  }
+
+  function updatePromptFeedback() {
+    const text = els.prompt?.value.trim() || '';
+    const len = text.length;
+    const analysis = analyzePrompt(text);
+
+    if (els.promptCharCount) {
+      els.promptCharCount.textContent = `${len} / 2000`;
+    }
+
+    let quality = 'Add epic background details';
+    let qualityClass = 'low';
+
+    if (len === 0) {
+      quality = 'Start writing your prompt';
+    } else if (analysis.misses.length >= 5) {
+      quality = `${analysis.hits.length}/7 layers — keep adding detail`;
+      qualityClass = 'low';
+    } else if (analysis.misses.length >= 2) {
+      quality = `${analysis.hits.length}/7 layers — good progress`;
+      qualityClass = 'mid';
+    } else {
+      quality = `${analysis.hits.length}/7 layers — excellent prompt`;
+      qualityClass = 'high';
+    }
+
+    if (els.promptQuality) {
+      els.promptQuality.textContent = quality;
+      els.promptQuality.className = `prompt-quality ${qualityClass}`;
+    }
+
+    const tips = buildPromptTips(analysis);
+    if (els.promptTipsList) {
+      els.promptTipsList.innerHTML = tips.map((tip) => `<li>${tip}</li>`).join('');
+    }
+  }
+
+  function updateSizeHint() {
+    const size = els.size?.value || '1024x1024';
+    const fast = getConfig().FAST_GENERATION !== false;
+    const base = SIZE_HINTS[size] || '';
+    if (els.sizeHint) {
+      els.sizeHint.textContent = fast
+        ? `${base} · Fast mode ON (~${getEstSecondsPerImage(size)}s per image)`
+        : base;
+    }
+  }
+
+  function getSizeLabel(size) {
+    return SIZE_LABELS[size] || size;
+  }
+
+  function is4KSize(size) {
+    return size === '3840x2160' || size === '2160x3840' || size === '2048x2048';
+  }
   function renderTemplates() {
     els.templatesGrid.innerHTML = PROMPT_TEMPLATES.map(
       (t, i) => `
@@ -298,6 +623,7 @@
       if (!card) return;
       const tpl = PROMPT_TEMPLATES[parseInt(card.dataset.index, 10)];
       els.prompt.value = tpl.prompt;
+      updatePromptFeedback();
       showToast(`Template "${tpl.title}" applied!`, 'success');
     });
   }
@@ -756,7 +1082,7 @@
           showToast('Settings restored. Click Generate to recreate.', 'info');
         } else if (action === 'view') {
           const fullImages = sessionImages.get(id) || (item.images?.length ? item.images : [item.thumbnail].filter(Boolean));
-          displayResults(fullImages, item.prompt);
+          displayResults(fullImages, item.prompt, item.size);
           if (!sessionImages.has(id)) {
             showToast('Showing saved preview. Regenerate for full resolution.', 'info');
           }
@@ -802,25 +1128,35 @@
     els.progressPanel.classList.add('active');
     els.resultsGrid.style.display = 'none';
     els.resultsPlaceholder.style.display = 'none';
+    if (els.resultsSummary) {
+      els.resultsSummary.style.display = 'none';
+      els.resultsSummary.innerHTML = '';
+    }
 
-    const fullPrompt = prompt + (STYLE_SUFFIXES[selectedStyle] || '');
-    const apiSize = SIZE_TO_API[size] || '2048x2048';
-    const totalEst = count * (cfg.EST_SECONDS_PER_IMAGE || 15);
+    const fullPrompt = buildGenerationPrompt(prompt, size);
+    const apiSize = getApiSize(size);
+    const estPerImage = getEstSecondsPerImage(size);
+    const totalEst = count * estPerImage;
 
-    startProgress(0, count, totalEst);
-    updateProgress(0, count, totalEst, `Connecting to Doubao Seedream 5.0 Lite...`);
+    startProgressTimer(count, totalEst);
+    setProgressStatus('Sending request to AI model...');
+
+    const genStartMs = Date.now();
 
     try {
       const images = await callSeedreamAPI(fullPrompt, apiSize, count, (done, status) => {
-        updateProgress(done, count, totalEst, status);
+        setProgressDone(done);
+        setProgressStatus(status);
       });
+
+      const totalSec = Math.floor((Date.now() - genStartMs) / 1000);
 
       if (!isProUser()) {
         consumeQuota(images.length);
       }
 
-      finishProgress();
-      displayResults(images, prompt);
+      finishProgress(totalSec);
+      displayResults(images, prompt, size, totalSec);
 
       try {
         await addToHistory({
@@ -836,7 +1172,7 @@
         showToast('Images generated! History not saved — browser storage may be full.', 'info');
       }
 
-      showToast(`Successfully generated ${count} image(s)!`, 'success');
+      showToast(`Done in ${totalSec}s — ${count} image(s) generated!`, 'success');
     } catch (err) {
       console.error('Generation error:', err);
       showToast(err.message || 'Generation failed. Please try again.', 'error');
@@ -921,10 +1257,14 @@
       throw new Error(errMsg);
     }
 
+    onProgress?.(0, 'Waiting for AI response...');
+
     const data = await response.json();
-    onProgress?.(0, 'Parsing generated images...');
+    onProgress?.(0, 'Downloading image data...');
 
     const images = await parseSeedreamImages(data);
+
+    onProgress?.(images.length, 'Rendering complete');
 
     if (images.length === 0) {
       throw new Error('No image data received from API. Check MODEL_ID in config.js.');
@@ -964,16 +1304,34 @@
   }
 
   // ---- Display Results ----
-  function displayResults(images, prompt) {
+  function displayResults(images, prompt, size, totalSec) {
+    const sizeLabel = getSizeLabel(size || els.size?.value || '');
     els.resultsPlaceholder.style.display = 'none';
+
+    if (els.resultsSummary) {
+      if (typeof totalSec === 'number' && totalSec >= 0) {
+        els.resultsSummary.style.display = 'flex';
+        els.resultsSummary.innerHTML = `
+          <span class="results-summary-label">✓ Generation complete</span>
+          <span class="results-summary-time">Total generation time: <strong>${totalSec}s</strong></span>
+        `;
+      } else {
+        els.resultsSummary.style.display = 'none';
+        els.resultsSummary.innerHTML = '';
+      }
+    }
+
     els.resultsGrid.style.display = 'grid';
     els.resultsGrid.innerHTML = images
       .map(
         (src, i) => `
         <div class="result-card">
-          <img src="${src}" alt="Generated anime art ${i + 1}">
+          <div class="result-img-wrap">
+            <span class="hd-badge">${escapeHtml(sizeLabel)}</span>
+            <img src="${src}" alt="Generated anime art ${i + 1}" class="result-hd-img" data-full="${src}">
+          </div>
           <div class="result-actions">
-            <button type="button" class="btn btn-sm btn-primary" data-download="${i}">⬇ Download</button>
+            <button type="button" class="btn btn-sm btn-primary" data-download="${i}">⬇ Download ${escapeHtml(sizeLabel)}</button>
             <div class="share-dropdown">
               <button type="button" class="btn btn-sm btn-outline" data-share-toggle="${i}">↗ Share</button>
               <div class="share-menu" id="shareMenu${i}">
@@ -992,6 +1350,11 @@
     // Store images for action handlers
     els.resultsGrid._images = images;
     els.resultsGrid._prompt = prompt;
+    els.resultsGrid._sizeLabel = sizeLabel;
+
+    els.resultsGrid.querySelectorAll('.result-hd-img').forEach((img) => {
+      img.addEventListener('click', () => openLightbox(img.dataset.full || img.src));
+    });
 
     els.resultsGrid.querySelectorAll('[data-download]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -1083,26 +1446,78 @@
     }
   }
 
-  // ---- Progress UI ----
-  function startProgress(current, total, totalSeconds) {
+  // ---- Progress UI (fixed total — no jumping estimates) ----
+  function startProgressTimer(imageCount, estimatedTotalSec) {
+    const totalSec = Math.max(1, estimatedTotalSec);
+    progressState = {
+      startMs: Date.now(),
+      imageCount,
+      done: 0,
+      totalSec,
+      lastElapsed: -1,
+      lastRemaining: -1
+    };
     els.progressBar.style.width = '0%';
-    updateProgress(current, total, totalSeconds, 'Connecting to Doubao Seedream 5.0 Lite...');
+    if (els.progressTotal) {
+      els.progressTotal.textContent = `Total: ${totalSec}s`;
+    }
+    tickProgressClock();
+    if (progressTimer) clearInterval(progressTimer);
+    progressTimer = setInterval(tickProgressClock, 1000);
   }
 
-  function updateProgress(done, total, totalSeconds, statusText) {
-    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
-    const elapsed = (done / total) * totalSeconds;
-    const remaining = Math.max(0, Math.ceil(totalSeconds - elapsed));
-
-    els.progressBar.style.width = `${Math.max(pct, done === 0 ? 5 : pct)}%`;
-    els.progressStatus.textContent = statusText;
-    els.progressEta.textContent = remaining > 0 ? `~${remaining}s remaining` : 'Almost done...';
+  function setProgressDone(done) {
+    if (!progressState) return;
+    progressState.done = done;
+    tickProgressClock();
   }
 
-  function finishProgress() {
-    els.progressBar.style.width = '100%';
-    els.progressStatus.textContent = 'Complete!';
-    els.progressEta.textContent = 'Done';
+  function setProgressStatus(text) {
+    if (els.progressStatus) els.progressStatus.textContent = text;
+  }
+
+  function tickProgressClock() {
+    if (!progressState) return;
+
+    const { startMs, imageCount, done, totalSec } = progressState;
+    const elapsed = Math.floor((Date.now() - startMs) / 1000);
+    const remaining = Math.max(0, totalSec - elapsed);
+    const progressPct = done >= imageCount
+      ? 100
+      : Math.min(99, (Math.min(elapsed, totalSec) / totalSec) * 100);
+
+    if (els.progressBar) {
+      els.progressBar.style.width = `${Math.round(progressPct)}%`;
+    }
+
+    if (elapsed !== progressState.lastElapsed || remaining !== progressState.lastRemaining) {
+      progressState.lastElapsed = elapsed;
+      progressState.lastRemaining = remaining;
+
+      if (els.progressElapsed) {
+        if (remaining > 0) {
+          els.progressElapsed.textContent = `${elapsed}s elapsed · ${remaining}s remaining`;
+        } else if (done >= imageCount) {
+          els.progressElapsed.textContent = `${elapsed}s elapsed · finishing...`;
+        } else {
+          els.progressElapsed.textContent = `${elapsed}s elapsed · almost done...`;
+        }
+      }
+    }
+  }
+
+  function finishProgress(totalSec) {
+    if (progressTimer) {
+      clearInterval(progressTimer);
+      progressTimer = null;
+    }
+    if (els.progressBar) els.progressBar.style.width = '100%';
+    if (els.progressStatus) els.progressStatus.textContent = 'Complete!';
+    if (els.progressTotal) els.progressTotal.textContent = `Total: ${totalSec}s`;
+    if (els.progressElapsed) {
+      els.progressElapsed.textContent = `${totalSec}s elapsed · 0s remaining`;
+    }
+    progressState = null;
   }
 
   function stopProgress() {
@@ -1110,6 +1525,7 @@
       clearInterval(progressTimer);
       progressTimer = null;
     }
+    progressState = null;
   }
 
   // ---- Modals ----

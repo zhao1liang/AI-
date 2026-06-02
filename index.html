@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Free AI anime generator powered by Doubao Seedream 5.0 Lite. Create stunning anime art, manga characters, and illustrations online.">
   <meta name="keywords" content="AI anime generator, Doubao Seedream, manga art, anime character creator">
-  <title>AnimeGen AI — Free AI Anime Generator | Doubao Seedream 5.0</title>
+  <title>AnimeGen - Free AI Anime Generator, No Watermark</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -37,7 +37,7 @@
     <section id="home" class="hero">
       <div class="container">
         <h1>Create Stunning <span>AI Anime Art</span> in Seconds</h1>
-        <p>Transform your ideas into beautiful anime illustrations using Doubao Seedream 5.0 Lite. No design skills required — just type and generate.</p>
+        <p>The best free AI manga creator to generate AI anime art, AI character, and AI anime images in 10 seconds. No sign up, no watermark.</p>
         <div class="hero-cta">
           <a href="#generator" class="btn btn-primary">Start Creating Free</a>
           <a href="#pricing" class="btn btn-outline">View Plans</a>
@@ -49,8 +49,15 @@
     <section class="section section-alt">
       <div class="container">
         <h2 class="section-title">AI-Generated Examples</h2>
-        <p class="section-subtitle">Explore what's possible with our anime generator. Click any image to enlarge.</p>
-        <div class="gallery-grid" id="exampleGallery"></div>
+        <p class="section-subtitle">Fresh AI anime samples every visit — auto-scrolling showcase. Click any image to enlarge.</p>
+        <div class="gallery-marquee-wrap" id="exampleGallery">
+          <div class="gallery-marquee gallery-marquee--left">
+            <div class="gallery-track" id="galleryTrack1"></div>
+          </div>
+          <div class="gallery-marquee gallery-marquee--right">
+            <div class="gallery-track" id="galleryTrack2"></div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -58,15 +65,23 @@
     <section id="generator" class="section">
       <div class="container">
         <h2 class="section-title">Anime Generator</h2>
-        <p class="section-subtitle">Enter an English prompt, pick a style, and let Doubao Seedream 5.0 Lite bring your vision to life.</p>
+        <p class="section-subtitle">Enter a detailed English prompt, pick 4K ultra HD size, and generate stunning anime art in seconds.</p>
 
         <div class="generator-layout">
           <!-- Left: Form -->
           <div class="generator-panel">
             <form id="generateForm">
               <div class="form-group">
-                <label for="prompt">Prompt <span class="hint">(English only)</span></label>
-                <textarea id="prompt" name="prompt" placeholder="e.g. a girl with silver hair in cherry blossom garden, soft lighting, detailed eyes" required maxlength="2000"></textarea>
+                <label for="prompt">Prompt <span class="hint">(English — more detail = better results)</span></label>
+                <textarea id="prompt" name="prompt" placeholder="Describe character + epic background + lighting. Example: silver-haired warrior standing on cliff edge, vast floating celestial palace above clouds, golden god rays, dramatic wide cinematic shot, wind and cherry petals, masterpiece" required maxlength="2000"></textarea>
+                <div class="prompt-meta">
+                  <span id="promptCharCount">0 / 2000</span>
+                  <span id="promptQuality" class="prompt-quality">Add epic background details</span>
+                </div>
+                <div class="prompt-tips" id="promptTips">
+                  <p class="prompt-tips-lead">💡 <strong>Prompt guide</strong> — great images need layered detail:</p>
+                  <ul class="prompt-tips-list" id="promptTipsList"></ul>
+                </div>
               </div>
 
               <div class="form-group">
@@ -81,6 +96,7 @@
                   <span class="style-chip" data-style="cyberpunk">Cyberpunk</span>
                   <span class="style-chip" data-style="ancient">Ancient</span>
                   <span class="style-chip" data-style="realistic">Realistic</span>
+                  <span class="style-chip" data-style="liveaction">Live-Action AI</span>
                   <span class="style-chip" data-style="chibi">Chibi</span>
                 </div>
               </div>
@@ -89,10 +105,13 @@
                 <div class="form-group">
                   <label for="size">Image Size</label>
                   <select id="size" name="size">
-                    <option value="512x512">512 × 512</option>
-                    <option value="768x1024">768 × 1024</option>
-                    <option value="1024x1024" selected>1024 × 1024</option>
+                    <option value="1024x1024" selected>1024 × 1024 (2K HD — Fastest)</option>
+                    <option value="1536x2048">1536 × 2048 (3K Portrait)</option>
+                    <option value="2048x2048">2048 × 2048 (3K Square)</option>
+                    <option value="3840x2160">3840 × 2160 (4K Ultra HD)</option>
+                    <option value="2160x3840">2160 × 3840 (4K Portrait)</option>
                   </select>
+                  <p class="size-hint" id="sizeHint">4K Ultra HD — best for wallpapers &amp; prints</p>
                 </div>
                 <div class="form-group">
                   <label for="count">Number of Images</label>
@@ -115,7 +134,10 @@
                 </div>
                 <div class="progress-text">
                   <span id="progressStatus">Preparing...</span>
-                  <span id="progressEta">~12s remaining</span>
+                  <span id="progressTime">
+                    <span id="progressTotal">Total: --s</span>
+                    <span id="progressElapsed">0s elapsed · --s remaining</span>
+                  </span>
                 </div>
               </div>
             </form>
@@ -125,8 +147,9 @@
           <div class="results-panel" id="resultsPanel">
             <div class="results-placeholder" id="resultsPlaceholder">
               <div class="icon">🎨</div>
-              <p>Your generated anime art will appear here.<br>Fill in a prompt and click Generate.</p>
+              <p>Your generated 4K anime art will appear here.<br>Fill in a detailed prompt and click Generate.</p>
             </div>
+            <div class="results-summary" id="resultsSummary" style="display:none"></div>
             <div class="results-grid" id="resultsGrid" style="display:none"></div>
           </div>
         </div>

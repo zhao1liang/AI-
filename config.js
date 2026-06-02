@@ -9,7 +9,9 @@ const CONFIG = {
 
   DAILY_FREE_LIMIT: 5,
   MAX_HISTORY_ITEMS: 15,
-  EST_SECONDS_PER_IMAGE: 15,
+  // 快速生成：使用更优 API 尺寸，显著缩短等待时间
+  FAST_GENERATION: true,
+  EST_SECONDS_PER_IMAGE: 12,
 
   PAYMENT: {
     PRICE_CNY: 68,
