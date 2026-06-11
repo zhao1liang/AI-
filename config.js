@@ -38,9 +38,9 @@ const CONFIG = {
     ]
   },
 
-  /** Umami 访问统计 — 注册 https://umami.is 后在 Dashboard 复制 Website ID */
+  /** Umami 访问统计 — https://umami.is */
   UMAMI: {
     SCRIPT_URL: 'https://cloud.umami.is/script.js',
-    WEBSITE_ID: '' // 例: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+    WEBSITE_ID: '33d3ea5c-8e3a-4b78-9380-294e3e5f495d'
   }
 };
