@@ -36,5 +36,11 @@ const CONFIG = {
       'ANIME-VIP-2026',
       'ANIME-PRO-DEMO01'
     ]
+  },
+
+  /** Umami 访问统计 — 注册 https://umami.is 后在 Dashboard 复制 Website ID */
+  UMAMI: {
+    SCRIPT_URL: 'https://cloud.umami.is/script.js',
+    WEBSITE_ID: '' // 例: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
   }
 };

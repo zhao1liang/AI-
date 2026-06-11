@@ -302,6 +302,22 @@
     }
     return CONFIG;
   }
+
+  function initUmami() {
+    const umami = getConfig().UMAMI;
+    const websiteId = umami?.WEBSITE_ID?.trim();
+    const scriptUrl = umami?.SCRIPT_URL?.trim() || 'https://cloud.umami.is/script.js';
+    if (!websiteId) return;
+
+    if (document.querySelector(`script[data-website-id="${websiteId}"]`)) return;
+
+    const script = document.createElement('script');
+    script.defer = true;
+    script.src = scriptUrl;
+    script.dataset.websiteId = websiteId;
+    document.head.appendChild(script);
+  }
+
   function init() {
     if (typeof CONFIG === 'undefined') {
       console.error('config.js failed to load — Generate button will not work.');
@@ -310,6 +326,7 @@
     }
 
     resetGenerateUI();
+    initUmami();
     cleanupLegacyHistory();
     renderExampleGallery();
     renderTemplates();
